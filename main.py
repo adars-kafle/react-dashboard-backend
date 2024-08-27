@@ -8,4 +8,5 @@ def root() -> None:
     return {"message": "Hello world!"}
 
 @app.get("/getSuppliers")
-def get_suppliers():
+def get_suppliers() -> list[Suppliers]:
+    pass

@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from . import crud, models, schemas
 from .database import engine, get_db
@@ -7,6 +8,15 @@ from .exceptions import SupplierNotFoundException, SupplierAlreadyExistsExceptio
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # List of origins that are allowed to make requests to this API. Use "*" to allow all origins.
+    allow_credentials=True,
+    allow_methods=["*"],  # List of HTTP methods allowed (e.g., GET, POST, etc.). Use "*" to allow all methods.
+    allow_headers=["*"],  # List of HTTP headers allowed. Use "*" to allow all headers.
+)
 
 # Create a new supplier
 @app.post("/suppliers/", response_model=schemas.Supplier)

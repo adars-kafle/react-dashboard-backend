@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional
+from uuid import UUID
 
 class SupplierBase(BaseModel):
     name: str
@@ -10,13 +12,13 @@ class SupplierCreate(SupplierBase):
     pass
 
 class SupplierUpdate(BaseModel):
-    name: str | None = None
-    email: EmailStr | None = None
-    address: str | None = None
-    phone: str | None = None
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
 
 class Supplier(SupplierBase):
-    id: int
+    id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True

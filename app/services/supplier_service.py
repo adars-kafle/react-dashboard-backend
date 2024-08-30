@@ -1,11 +1,16 @@
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from app.db import db_models
-from app.schemas import supplier as supplier_schema
-from app.exceptions.supplier import SupplierNotFoundException, SupplierAlreadyExistsException
 from app.exceptions.database import DatabaseOperationException
+from app.exceptions.supplier import (
+    SupplierAlreadyExistsException,
+    SupplierNotFoundException,
+)
+from app.schemas import supplier as supplier_schema
+
 
 class SupplierService:
     @staticmethod
@@ -29,7 +34,9 @@ class SupplierService:
         return supplier
 
     @staticmethod
-    def get_suppliers(db: Session, skip: int = 0, limit: int = 100) -> list[supplier_schema.Supplier]:
+    def get_suppliers(
+        db: Session, skip: int = 0, limit: int = 100
+    ) -> list[supplier_schema.Supplier]:
         """
         Get all the list of suppliers
 
@@ -43,7 +50,9 @@ class SupplierService:
         return suppliers
 
     @staticmethod
-    def create_supplier(db: Session, supplier: supplier_schema.SupplierCreate) -> supplier_schema.Supplier:
+    def create_supplier(
+        db: Session, supplier: supplier_schema.SupplierCreate
+    ) -> supplier_schema.Supplier:
         """
         Create a new supplier
 
@@ -59,10 +68,14 @@ class SupplierService:
             DatabaseOperationException: If the database operation fails
         """
         # Check if supplier already exists
-        existing_supplier = db.query(db_models.Supplier).filter(
-            (db_models.Supplier.email == supplier.email) |
-            (db_models.Supplier.phone == supplier.phone)
-        ).first()
+        existing_supplier = (
+            db.query(db_models.Supplier)
+            .filter(
+                (db_models.Supplier.email == supplier.email)
+                | (db_models.Supplier.phone == supplier.phone)
+            )
+            .first()
+        )
         if existing_supplier:
             if existing_supplier.email == supplier.email:
                 raise SupplierAlreadyExistsException("email", supplier.email)
@@ -78,13 +91,19 @@ class SupplierService:
             return new_supplier
         except IntegrityError as e:
             db.rollback()
-            raise DatabaseOperationException("create_supplier", f"Integrity error: {str(e)}")
+            raise DatabaseOperationException(
+                "create_supplier", f"Integrity error: {str(e)}"
+            )
         except Exception as e:
             db.rollback()
-            raise DatabaseOperationException("create_supplier", f"Unexpected error: {str(e)}")
+            raise DatabaseOperationException(
+                "create_supplier", f"Unexpected error: {str(e)}"
+            )
 
     @staticmethod
-    def update_supplier(db: Session, supplier_id: UUID, supplier: supplier_schema.SupplierUpdate) -> supplier_schema.Supplier:
+    def update_supplier(
+        db: Session, supplier_id: UUID, supplier: supplier_schema.SupplierUpdate
+    ) -> supplier_schema.Supplier:
         """
         Update a supplier by ID
 
@@ -100,14 +119,20 @@ class SupplierService:
             SupplierNotFoundException: If the supplier with the given ID is not found
             DatabaseOperationException: If the database operation fails
         """
-        existing_supplier = db.query(db_models.Supplier).filter_by(id=supplier_id).first()
+        existing_supplier = (
+            db.query(db_models.Supplier).filter_by(id=supplier_id).first()
+        )
         if existing_supplier is None:
-            raise SupplierNotFoundException(f"Supplier with ID {supplier_id} not found!")
+            raise SupplierNotFoundException(
+                f"Supplier with ID {supplier_id} not found!"
+            )
 
         # Update the supplier data if exists
         update_data = {k: v for k, v in supplier.dict().items() if v is not None}
         for key, value in update_data.items():
-            setattr(existing_supplier, key, value) # This automatically updates the supplier data with new values
+            setattr(
+                existing_supplier, key, value
+            )  # This automatically updates the supplier data with new values
 
         try:
             db.commit()
@@ -115,11 +140,14 @@ class SupplierService:
             return existing_supplier
         except IntegrityError as e:
             db.rollback()
-            raise DatabaseOperationException("update_supplier", f"Integrity error: {str(e)}")
+            raise DatabaseOperationException(
+                "update_supplier", f"Integrity error: {str(e)}"
+            )
         except Exception as e:
             db.rollback()
-            raise DatabaseOperationException("update_supplier", f"Unexpected error: {str(e)}")
-
+            raise DatabaseOperationException(
+                "update_supplier", f"Unexpected error: {str(e)}"
+            )
 
     @staticmethod
     def delete_supplier(db: Session, supplier_id: UUID) -> None:
@@ -134,16 +162,24 @@ class SupplierService:
             SupplierNotFoundException: If the supplier with the given ID is not found
             DatabaseOperationException: If the database operation fails
         """
-        existing_supplier = db.query(db_models.Supplier).filter_by(id=supplier_id).first()
+        existing_supplier = (
+            db.query(db_models.Supplier).filter_by(id=supplier_id).first()
+        )
         if existing_supplier is None:
-            raise SupplierNotFoundException(f"Supplier with ID {supplier_id} not found!")
+            raise SupplierNotFoundException(
+                f"Supplier with ID {supplier_id} not found!"
+            )
 
         try:
             db.delete(existing_supplier)
             db.commit()
         except IntegrityError as e:
             db.rollback()
-            raise DatabaseOperationException("delete_supplier", f"Integrity error: {str(e)}")
+            raise DatabaseOperationException(
+                "delete_supplier", f"Integrity error: {str(e)}"
+            )
         except Exception as e:
             db.rollback()
-            raise DatabaseOperationException("delete_supplier", f"Unexpected error: {str(e)}")
+            raise DatabaseOperationException(
+                "delete_supplier", f"Unexpected error: {str(e)}"
+            )

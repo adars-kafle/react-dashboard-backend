@@ -1,12 +1,14 @@
 from uuid import UUID
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
-from app.db import db_models
-from app.schemas import user as user_schema
-from app.exceptions.database import DatabaseOperationException
-from app.exceptions.user import UserNotFoundException, UserAlreadyExistsException
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from app.core.security import get_password_hash, verify_password
+from app.db import db_models
+from app.exceptions.database import DatabaseOperationException
+from app.exceptions.user import UserAlreadyExistsException, UserNotFoundException
+from app.schemas import user as user_schema
+
 
 class UserService:
     @staticmethod
@@ -44,7 +46,9 @@ class UserService:
         return db.query(db_models.User).filter_by(email=email).first()
 
     @staticmethod
-    def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[user_schema.User]:
+    def get_users(
+        db: Session, skip: int = 0, limit: int = 100
+    ) -> list[user_schema.User]:
         """
         Get all users
 
@@ -82,7 +86,9 @@ class UserService:
 
         # If not, create the new user
         hashed_password = get_password_hash(user.password)
-        new_user = db_models.User(name=user.name, email=user.email, hashed_password=hashed_password)
+        new_user = db_models.User(
+            name=user.name, email=user.email, hashed_password=hashed_password
+        )
         try:
             db.add(new_user)
             db.commit()
@@ -90,13 +96,19 @@ class UserService:
             return new_user
         except IntegrityError as e:
             db.rollback()
-            raise DatabaseOperationException("create_user", f"Integrity error: {str(e)}")
+            raise DatabaseOperationException(
+                "create_user", f"Integrity error: {str(e)}"
+            )
         except Exception as e:
             db.rollback()
-            raise DatabaseOperationException("create_user", f"Unexpected error: {str(e)}")
+            raise DatabaseOperationException(
+                "create_user", f"Unexpected error: {str(e)}"
+            )
 
     @staticmethod
-    def update_user(db: Session, user_id: UUID, user: user_schema.UserUpdate) -> user_schema.User:
+    def update_user(
+        db: Session, user_id: UUID, user: user_schema.UserUpdate
+    ) -> user_schema.User:
         """
         Update a user by ID
 
@@ -118,8 +130,10 @@ class UserService:
 
         # Update the user data if exists
         update_data = user.dict(exclude_unset=True)
-        if 'password' in update_data:
-            update_data['hashed_password'] = get_password_hash(update_data.pop('password'))
+        if "password" in update_data:
+            update_data["hashed_password"] = get_password_hash(
+                update_data.pop("password")
+            )
         for key, value in update_data.items():
             setattr(existing_user, key, value)
 
@@ -129,10 +143,14 @@ class UserService:
             return existing_user
         except IntegrityError as e:
             db.rollback()
-            raise DatabaseOperationException("update_user", f"Integrity error: {str(e)}")
+            raise DatabaseOperationException(
+                "update_user", f"Integrity error: {str(e)}"
+            )
         except Exception as e:
             db.rollback()
-            raise DatabaseOperationException("update_user", f"Unexpected error: {str(e)}")
+            raise DatabaseOperationException(
+                "update_user", f"Unexpected error: {str(e)}"
+            )
 
     @staticmethod
     def delete_user(db: Session, user_id: UUID) -> None:
@@ -156,10 +174,14 @@ class UserService:
             db.commit()
         except IntegrityError as e:
             db.rollback()
-            raise DatabaseOperationException("delete_user", f"Integrity error: {str(e)}")
+            raise DatabaseOperationException(
+                "delete_user", f"Integrity error: {str(e)}"
+            )
         except Exception as e:
             db.rollback()
-            raise DatabaseOperationException("delete_user", f"Unexpected error: {str(e)}")
+            raise DatabaseOperationException(
+                "delete_user", f"Unexpected error: {str(e)}"
+            )
 
     @staticmethod
     def authenticate_user(db: Session, email: str, password: str) -> user_schema.User:

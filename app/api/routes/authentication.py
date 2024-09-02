@@ -7,7 +7,7 @@ from app.core import security
 from app.db.database import get_db
 from app.exceptions.database import DatabaseOperationException
 from app.exceptions.user import UserAlreadyExistsException, UserNotFoundException
-from app.schemas.user import Token, User, UserCreate, UserLogin
+from app.schemas.user import Token, User, UserCreate, UserLogin, UserLogoutResponse
 from app.services.user_service import UserService
 
 routes = APIRouter()
@@ -36,12 +36,13 @@ async def login(
             key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            secure=True,
+            secure=False,  # we are not using https so it's false
             samesite="lax",
-            max_age=settings_config.ACCESS_TOKEN_EXPIRE_MINUTES,
+            max_age=settings_config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            domain="localhost",  # Set this to your domain in production
+            path="/",  # This ensures that cookie is sent with all requests
         )
-
-        return {"message": "User logged in successfully!"}
+        return {"message": "User logged in successfully!", "user": user}
     except (UserNotFoundException, ValueError):
         raise credentials_exception
 
@@ -59,7 +60,7 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
         )
 
 
-@routes.post("/logout", response_model=Token)
+@routes.post("/logout", response_model=UserLogoutResponse)
 async def logout(response: Response):
-    response.delete_cookie("access_token")
+    response.delete_cookie(key="access_token", domain="localhost", path="/")
     return {"message": "User logged out successfully!"}

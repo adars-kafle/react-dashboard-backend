@@ -31,6 +31,7 @@ class User(UserBase):
 
 class Token(BaseModel):
     message: str
+    user: User
 
 
 class UserLogin(BaseModel):
@@ -39,6 +40,10 @@ class UserLogin(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserLogoutResponse(BaseModel):
+    message: str
 
 
 class TokenPayload(BaseModel):

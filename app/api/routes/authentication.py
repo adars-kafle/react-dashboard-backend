@@ -1,33 +1,51 @@
-from fastapi import status, APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from app.config.settings import settings_config
 from app.core import security
 from app.db.database import get_db
-from app.config.settings import settings_config
-from app.services.user_service import UserService
-from app.schemas.user import Token, User, UserCreate, UserLogin
-from app.exceptions.user import UserNotFoundException, UserAlreadyExistsException
 from app.exceptions.database import DatabaseOperationException
+from app.exceptions.user import UserAlreadyExistsException, UserNotFoundException
+from app.schemas.user import Token, User, UserCreate, UserLogin, UserLogoutResponse
+from app.services.user_service import UserService
 
 routes = APIRouter()
 
+
 @routes.post("/login", response_model=Token)
-async def login(form_data: UserLogin, db: Session = Depends(get_db)):
+async def login(
+    response: Response, form_data: UserLogin, db: Session = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect email or password",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        user = UserService.authenticate_user(db=db, email=form_data.email, password=form_data.password)
+        user = UserService.authenticate_user(
+            db=db, email=form_data.email, password=form_data.password
+        )
         access_token = security.create_access_token(
             data={"sub": user.email},
-            expires_delta=settings_config.ACCESS_TOKEN_EXPIRE_MINUTES
+            expires_delta=settings_config.ACCESS_TOKEN_EXPIRE_MINUTES,
         )
-        return {"access_token": access_token, "token_type": "bearer"}
+
+        # Set the access token in a secure HTTP-only cookie
+        response.set_cookie(
+            key="access_token",
+            value=f"Bearer {access_token}",
+            httponly=True,
+            secure=False,  # we are not using https so it's false
+            samesite="lax",
+            max_age=settings_config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            domain="localhost",  # Set this to your domain in production
+            path="/",  # This ensures that cookie is sent with all requests
+        )
+        return {"message": "User logged in successfully!", "user": user}
     except (UserNotFoundException, ValueError):
         raise credentials_exception
+
 
 @routes.post("/signup", response_model=User)
 async def signup(user: UserCreate, db: Session = Depends(get_db)):
@@ -37,4 +55,12 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     except UserAlreadyExistsException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except DatabaseOperationException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@routes.post("/logout", response_model=UserLogoutResponse)
+async def logout(response: Response):
+    response.delete_cookie(key="access_token", domain="localhost", path="/")
+    return {"message": "User logged out successfully!"}

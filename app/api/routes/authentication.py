@@ -36,10 +36,10 @@ async def login(
             key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            secure=False,  # we are not using https so it's false
+            secure=settings_config.ENVIRONMENT == "production",
             samesite="lax",
             max_age=settings_config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            domain="localhost",  # Set this to your domain in production
+            domain=settings_config.DOMAIN,
             path="/",  # This ensures that cookie is sent with all requests
         )
         return {"message": "User logged in successfully!", "user": user}

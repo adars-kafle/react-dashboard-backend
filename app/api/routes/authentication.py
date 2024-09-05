@@ -36,10 +36,10 @@ async def login(
             key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            secure=settings_config.ENVIRONMENT == "production",
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=settings_config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            domain=settings_config.DOMAIN,
+            domain="react-backend-cio3.onrender.com",
             path="/",  # This ensures that cookie is sent with all requests
         )
         return {"message": "User logged in successfully!", "user": user}

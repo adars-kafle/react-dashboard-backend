@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRouter
 
 from app.api.routes import authentication, suppliers, users
+from app.config.settings import settings_config
 from app.db import db_models
 from app.db.database import engine
 
@@ -14,7 +15,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "*"
+        settings_config.FRONTEND_URL,
+        "http://localhost:3000",
     ],  # List of origins that are allowed to make requests to this API. Use "*" to allow all origins.
     allow_credentials=True,
     allow_methods=[
